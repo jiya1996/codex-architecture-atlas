@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Codex 源码架构图集：运行时架构、工作流、模型与工具时序、数据流和 Turn 生命周期。">
+  <title>Codex 源码架构图集</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --surface: rgba(255, 255, 255, .92);
+      --surface-strong: #ffffff;
+      --text: #0f172a;
+      --muted: #526075;
+      --faint: #8a97aa;
+      --border: #dbe4ee;
+      --accent: #0891b2;
+      --accent-soft: #e6f7fb;
+      --shadow: 0 18px 52px rgba(15, 23, 42, .08);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #050a18;
+      --surface: rgba(11, 20, 39, .92);
+      --surface-strong: #0b1427;
+      --text: #f8fafc;
+      --muted: #aab7ca;
+      --faint: #73829a;
+      --border: #25334b;
+      --accent: #22d3ee;
+      --accent-soft: #0d2d39;
+      --shadow: 0 22px 64px rgba(0, 0, 0, .32);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 34rem),
+        linear-gradient(var(--bg), var(--bg));
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    a { color: inherit; }
+
+    .shell {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 56px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 28px 30px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      color: var(--accent);
+      font: 700 13px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      content: "";
+      box-shadow: 0 0 0 5px var(--accent-soft);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 54px);
+      line-height: 1.08;
+      letter-spacing: -.045em;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .theme-toggle {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 44px;
+      padding: 0 15px;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--surface-strong);
+      font: 700 14px/1 inherit;
+      cursor: pointer;
+    }
+
+    .theme-toggle:hover { border-color: var(--accent); }
+    .theme-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 3px; }
+
+    main { margin-top: 26px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      min-height: 220px;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 25px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: 0 10px 32px rgba(15, 23, 42, .045);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .card::after {
+      position: absolute;
+      right: -44px;
+      bottom: -58px;
+      width: 170px;
+      height: 170px;
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+      box-shadow: var(--shadow);
+    }
+
+    .card:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 3px; }
+
+    .card.featured {
+      grid-column: 1 / -1;
+      min-height: 235px;
+      background:
+        linear-gradient(115deg, color-mix(in srgb, var(--accent) 11%, var(--surface)) 0 44%, var(--surface) 72%);
+    }
+
+    .number {
+      color: var(--accent);
+      font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .08em;
+    }
+
+    h2 {
+      margin: 22px 0 9px;
+      font-size: 24px;
+      letter-spacing: -.025em;
+    }
+
+    .card p {
+      max-width: 690px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .open {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 24px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .open::after { content: "↗"; font-size: 17px; }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 24px;
+      padding: 0 4px;
+      color: var(--faint);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 24px, 1180px); padding-top: 12px; }
+      header { flex-direction: column; padding: 24px 22px; border-radius: 19px; }
+      .theme-toggle { align-self: stretch; justify-content: center; }
+      .grid { grid-template-columns: 1fr; }
+      .card.featured { grid-column: auto; }
+      footer { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">Codex Source Atlas</p>
+        <h1>Codex 源码架构图集</h1>
+        <p class="intro">从运行时边界到一次 Turn 的完成过程，用五种互补视角理解 Codex 的核心结构、调用循环、数据变化和状态迁移。</p>
+      </div>
+      <button class="theme-toggle" type="button" aria-label="切换页面主题" aria-pressed="false">
+        <span aria-hidden="true" class="theme-icon">☾</span>
+        <span class="theme-label">深色</span>
+      </button>
+    </header>
+
+    <main aria-label="Codex 架构图列表">
+      <div class="grid">
+        <a class="card featured" href="01-architecture-runtime-overview.html">
+          <span class="number">01 / ARCHITECTURE</span>
+          <h2>Codex 运行时总览</h2>
+          <p>认识客户端、App Server、Codex Core、模型服务、工具执行与持久化之间的边界和依赖方向。</p>
+          <span class="open">打开架构图</span>
+        </a>
+
+        <a class="card" href="02-workflow-turn-to-completion.html">
+          <span class="number">02 / WORKFLOW</span>
+          <h2>一次 Turn 的完整工作流</h2>
+          <p>沿主路径观察请求如何进入系统，以及直接回答、工具循环和中断分别如何结束。</p>
+          <span class="open">打开工作流图</span>
+        </a>
+
+        <a class="card" href="03-sequence-model-tool-roundtrip.html">
+          <span class="number">03 / SEQUENCE</span>
+          <h2>模型与工具往返时序</h2>
+          <p>按时间顺序拆开 JSON-RPC、Responses API、Tool Call、Sandbox 执行和再次采样。</p>
+          <span class="open">打开时序图</span>
+        </a>
+
+        <a class="card" href="04-dataflow-turn-context-persistence.html">
+          <span class="number">04 / DATA FLOW</span>
+          <h2>上下文与持久化数据流</h2>
+          <p>追踪用户输入、ResponseItem、Session History、Prompt、客户端事件和 Rollout JSONL。</p>
+          <span class="open">打开数据流图</span>
+        </a>
+
+        <a class="card" href="05-lifecycle-turn.html">
+          <span class="number">05 / LIFECYCLE</span>
+          <h2>Turn 生命周期</h2>
+          <p>区分接受、准备、模型采样、审批等待、工具执行、完成、重试与异常终止状态。</p>
+          <span class="open">打开生命周期图</span>
+        </a>
+      </div>
+    </main>
+
+    <footer>
+      <span>源码基线：<code>openai/codex@758ef40f</code></span>
+      <span>每张图均可独立切换浅色与深色模式</span>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const button = document.querySelector('.theme-toggle');
+      const label = document.querySelector('.theme-label');
+      const icon = document.querySelector('.theme-icon');
+      const stored = localStorage.getItem('codex-atlas-theme');
+      const preferred = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function apply(theme) {
+        const dark = theme === 'dark';
+        root.dataset.theme = theme;
+        button.setAttribute('aria-pressed', String(dark));
+        label.textContent = dark ? '浅色' : '深色';
+        icon.textContent = dark ? '☀' : '☾';
+      }
+
+      apply(stored || preferred);
+      button.addEventListener('click', () => {
+        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('codex-atlas-theme', next);
+        apply(next);
+      });
+    })();
+  </script>
+</body>
+</html>
