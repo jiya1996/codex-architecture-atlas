@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Codex 源码架构图集：运行时架构、工作流、模型与工具时序、数据流和 Turn 生命周期。">
   <title>Codex 源码架构图集</title>
+  <script src="theme.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -15,7 +16,7 @@
       --muted: #526075;
       --faint: #8a97aa;
       --border: #dbe4ee;
-      --accent: #0891b2;
+      --accent: #087e9b;
       --accent-soft: #e6f7fb;
       --shadow: 0 18px 52px rgba(15, 23, 42, .08);
     }
@@ -120,6 +121,18 @@
     .theme-toggle:hover { border-color: var(--accent); }
     .theme-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 3px; }
 
+    .header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; }
+    .profile-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 15px; color: var(--text); background: var(--surface-strong); border: 1px solid var(--border); border-radius: 13px; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .profile-link:hover { border-color: var(--accent); }
+    .profile-link:focus-visible, .author-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+    .author-banner { display: flex; align-items: center; gap: 18px; padding: 23px 26px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); }
+    .author-avatar { display: grid; place-items: center; flex: 0 0 52px; height: 52px; background: var(--accent-soft); color: var(--accent); border-radius: 16px; font-size: 26px; }
+    .author-copy { flex: 1; min-width: 0; }
+    .author-copy h2 { margin: 0 0 7px; font-size: 18px; }
+    .author-copy h2 span { font-size: 14px; font-weight: 500; color: var(--muted); }
+    .author-copy p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.75; }
+    .author-link { flex: 0 0 auto; color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 700; }
+
     main { margin-top: 26px; }
 
     .grid {
@@ -219,6 +232,11 @@
       .shell { width: min(100% - 24px, 1180px); padding-top: 12px; }
       header { flex-direction: column; padding: 24px 22px; border-radius: 19px; }
       .theme-toggle { align-self: stretch; justify-content: center; }
+      .header-actions { width: 100%; justify-content: flex-start; }
+      .author-banner { align-items: flex-start; flex-wrap: wrap; padding: 21px; gap: 14px; }
+      .author-copy { flex-basis: calc(100% - 66px); }
+      .author-copy h2 span { display: block; margin-top: 5px; }
+      .author-link { margin-left: 66px; }
       .grid { grid-template-columns: 1fr; }
       .card.featured { grid-column: auto; }
       footer { flex-direction: column; }
@@ -237,13 +255,24 @@
         <h1>Codex 源码架构图集</h1>
         <p class="intro">从运行时边界到一次 Turn 的完成过程，用五种互补视角理解 Codex 的核心结构、调用循环、数据变化和状态迁移。</p>
       </div>
+      <nav class="header-actions" aria-label="站点导航">
+      <a class="profile-link" href="about.html">个人主页 ↗</a>
       <button class="theme-toggle" type="button" aria-label="切换页面主题" aria-pressed="false">
         <span aria-hidden="true" class="theme-icon">☾</span>
         <span class="theme-label">深色</span>
       </button>
+      </nav>
     </header>
 
     <main aria-label="Codex 架构图列表">
+      <section class="author-banner" aria-labelledby="author-title">
+        <div class="author-avatar" aria-hidden="true">瑶</div>
+        <div class="author-copy">
+          <h2 id="author-title">何佳瑶 Jiya <span>· AI 应用落地创业者</span></h2>
+          <p>从金融科技产品工作出发，持续研究 Codex 与 Agent（智能体）。在这里，用源码、架构图和实践记录，把 AI 如何完成任务这件事弄明白。</p>
+        </div>
+        <a class="author-link" href="about.html">认识我与我的产品 ↗</a>
+      </section>
       <div class="grid">
         <a class="card featured" href="01-architecture-runtime-overview.html">
           <span class="number">01 / ARCHITECTURE</span>
@@ -288,30 +317,5 @@
     </footer>
   </div>
 
-  <script>
-    (() => {
-      const root = document.documentElement;
-      const button = document.querySelector('.theme-toggle');
-      const label = document.querySelector('.theme-label');
-      const icon = document.querySelector('.theme-icon');
-      const stored = localStorage.getItem('codex-atlas-theme');
-      const preferred = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-
-      function apply(theme) {
-        const dark = theme === 'dark';
-        root.dataset.theme = theme;
-        button.setAttribute('aria-pressed', String(dark));
-        label.textContent = dark ? '浅色' : '深色';
-        icon.textContent = dark ? '☀' : '☾';
-      }
-
-      apply(stored || preferred);
-      button.addEventListener('click', () => {
-        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem('codex-atlas-theme', next);
-        apply(next);
-      });
-    })();
-  </script>
 </body>
 </html>
